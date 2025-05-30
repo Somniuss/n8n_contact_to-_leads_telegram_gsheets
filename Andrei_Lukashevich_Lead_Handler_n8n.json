@@ -1,0 +1,822 @@
+{
+  "name": "Lead Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE",
+          "mode": "list",
+          "cachedResultName": "Leads_Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 47614003,
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit#gid=47614003"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "summary": "={{ $json.summary }}",
+            "brand": "={{ $json.brand }}",
+            "date": "={{ $json.time }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "brand",
+              "displayName": "brand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        -200
+      ],
+      "id": "44bf4c83-668b-4f5e-b3e5-659e5643c374",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "59YBNPVyJbBieTrK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "0ce9a418-7d33-438e-9b2a-ec04e3ebb546",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        340,
+        80
+      ],
+      "id": "c49ad9c3-11c1-4727-9bfc-fc5701b0a115",
+      "name": "Incoming Lead webhook",
+      "webhookId": "0ce9a418-7d33-438e-9b2a-ec04e3ebb546"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst validLeads = items.filter((item) => {\n  const email = item.json.body.email;\n  const message = item.json.body.message;\n  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return emailRegex.test(email) && message.trim() !== \"\";\n});\n\nif (validLeads.length === 0) {\n  throw new Error(\"No valid leads found\"); // ← направит поток по error-выходу\n}\n\nreturn validLeads;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        80
+      ],
+      "id": "92e4fec9-ca98-4b05-a93e-523e820df11d",
+      "name": "Validation Code",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a92320de-bf9c-492c-b757-d29b2395ee45",
+              "name": "chatInput",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "89b589e3-09e7-401d-9c79-8f3f0930af7e",
+              "name": "",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f8c5b192-ed0b-431f-95bd-5741818d1e89",
+              "name": "body.name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "06e8fa6a-29f1-4167-82a1-c94602cc03d9",
+              "name": "body.email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        740,
+        -60
+      ],
+      "id": "4dc83da9-55db-48b2-9b75-d97f2ebdbded",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a lead analyzer. Extract the summary and brand from this message. Respond in JSON format like: {\"summary\": \"...\", \"brand\": \"...\"} — Input: {{ $json.body.message }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "="
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        1000,
+        -160
+      ],
+      "id": "9d403472-60e0-41c2-b14b-a1bff5878cbf",
+      "name": "Basic LLM Chain",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE",
+          "mode": "list",
+          "cachedResultName": "Leads_Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1088581592,
+          "mode": "list",
+          "cachedResultName": "Errors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit#gid=1088581592"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $now }}",
+            "Error": "={{ $json.error }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Error",
+              "displayName": "Error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        860,
+        100
+      ],
+      "id": "cff6ce12-09ef-4155-a231-67d89c16a70b",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "59YBNPVyJbBieTrK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        -320
+      ],
+      "id": "02f592a0-8160-4139-96c7-8da29fbbc92d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "WxjrDO2ILVQv7vab",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1300,
+        100
+      ],
+      "id": "fa558d34-5e77-46ad-8f21-facc95547762",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "506185cc-d61e-410c-b864-cf62928c9c54",
+              "name": "summary",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "7922b22d-da3f-4c95-89b3-f0f08966677d",
+              "name": "brand",
+              "value": "={{ $json.brand }}",
+              "type": "string"
+            },
+            {
+              "id": "f2db4688-d8c9-4fde-9743-46e6fbf063a9",
+              "name": "time",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "7c9444bf-4785-41d7-8fa6-eeb1f9ab64b8",
+              "name": "body.name",
+              "value": "={{ $('Incoming Lead webhook').item.json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "e5424737-126b-4a82-8f24-5a4f734cd3ba",
+              "name": "body.email",
+              "value": "={{ $('Incoming Lead webhook').item.json.body.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        -300
+      ],
+      "id": "da96db7c-79b7-48c6-b122-dcf939f7e405",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [{\n  json: {\n    name: data.body.name,\n    email: data.body.email,\n    summary: data.summary,\n    brand: data.brand,\n    time: data.time\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        -40
+      ],
+      "id": "878a8c38-b0f3-439c-9b74-3bd7fb572f62",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "chatId": "424351117",
+        "text": "=🔔 Новый лид:{{ $json.name }} {{ $json.brand }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2140,
+        -40
+      ],
+      "id": "c78bdba7-67e8-4d2f-ae18-423d1eba0e5b",
+      "name": "Telegram",
+      "webhookId": "79018a89-deff-4601-bb6c-d00008190159",
+      "credentials": {
+        "telegramApi": {
+          "id": "XAO16uPOcH2jmclU",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE",
+          "mode": "list",
+          "cachedResultName": "Leads_Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 4413836,
+          "mode": "list",
+          "cachedResultName": "Watches",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit#gid=4413836"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Code2').item.json.name }}",
+            "Brand": "={{ $('Code2').item.json.brand }}",
+            "Date": "={{ $('Code2').item.json.time }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Brand",
+              "displayName": "Brand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2680,
+        0
+      ],
+      "id": "0a599413-b41c-473d-9dff-b76661d0e273",
+      "name": "Google Sheets2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "59YBNPVyJbBieTrK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "523ea6af-04fe-4a41-8f73-3cc77f111021",
+              "name": "name",
+              "value": "={{ $('Code2').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "ef584ad3-9c46-4fc3-92e3-9758c894cf4c",
+              "name": "brand",
+              "value": "={{ $('Code2').item.json.brand }}",
+              "type": "string"
+            },
+            {
+              "id": "73527cbc-d0a5-4097-93f2-5060b931d441",
+              "name": "time",
+              "value": "={{ $('Code2').item.json.time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2540,
+        220
+      ],
+      "id": "3c418413-a617-4444-b970-3342590a31c5",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE",
+          "mode": "list",
+          "cachedResultName": "Leads_Test",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 4413836,
+          "mode": "list",
+          "cachedResultName": "Watches",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ae3oPMBJXvh37yEpMVACFP9vP3Zp66YDhHEvXljSFmE/edit#gid=4413836"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2280,
+        -300
+      ],
+      "id": "03c842cd-bb06-4322-80c9-1a4bd8329785",
+      "name": "Google Sheets3",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "59YBNPVyJbBieTrK",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1760,
+        400
+      ],
+      "id": "03e6cb69-1b6f-412f-a51a-0a22baddd9c1",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorInfo = item.error?.message || \"Unknown error\";\nconst nodeName = item.node?.name || \"Unknown node\";\n\nreturn [{\n  json: {\n    node: nodeName,\n    error: errorInfo,\n    time: new Date().toISOString(),\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        400
+      ],
+      "id": "9914f55c-30dc-4ccc-80be-824568ded9ac",
+      "name": "Error Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  let text = item.json.text;\n\n  // Remove markdown code block markers if present\n  // Remove leading \"```json\" or \"```\"\n  text = text.replace(/^```json|^```/i, '').trim();\n  // Remove ending \"```\"\n  text = text.replace(/```$/, '').trim();\n\n  const parsed = JSON.parse(text); // text → JSON\n  return {\n    json: {\n      ...parsed,\n      // если нужно, можешь добавить свои поля:\n      // lead_id: item.json.lead_id,\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        -140
+      ],
+      "id": "3263b804-0a7d-407d-b949-124d7bb720fb",
+      "name": "Code AI output"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst result = items.map((item) => ({\n  summary: item.json.summary,\n  brand: item.json.brand,\n  name: item.json.body ? item.json.body.name : undefined,\n  email: item.json.body ? item.json.body.email : undefined,\n  time: item.json.time,\n}));\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        100
+      ],
+      "id": "53e0bbc6-ba64-4852-b786-cdaeb1e3b230",
+      "name": "Normalize Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const googleSheetsData = $input.all().map(item => item.json);\nconst brandItem = $(\"Code2\").first().json;\nconst brands = [\"Rolex\", \"Omega\", \"Patek\", \"None\"];\n\nconst userBrand = brandItem.brand?.trim();\n\nif (\n  userBrand &&\n  brands.includes(userBrand) &&\n  !googleSheetsData.some(sheetItem => {\n    const sheetBrand = sheetItem.Brand?.trim();\n    return sheetBrand && sheetBrand.toLowerCase() === userBrand.toLowerCase();\n  })\n) {\n  return {\n    Brand: userBrand,\n    Name: brandItem.name,\n    Date: brandItem.time,\n  };\n}\n\nreturn {};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -20
+      ],
+      "id": "79dbbb97-1be3-4446-b7bf-70c92690ce52",
+      "name": "Check",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Incoming Lead webhook": {
+      "main": [
+        [
+          {
+            "node": "Validation Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code AI output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Normalize Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        []
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "main": [
+        []
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets3": {
+      "main": [
+        [
+          {
+            "node": "Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Data": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Error Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code AI output": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Data": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0f25564b-17a7-4ffa-b3ae-04f4e712fe22",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e1a7bf4ccdc48a1b0b35829a918b0a60a4cc7c3a8595069e91519507d9310bbb"
+  },
+  "id": "OUWTBiNVvGgenmPE",
+  "tags": []
+}
